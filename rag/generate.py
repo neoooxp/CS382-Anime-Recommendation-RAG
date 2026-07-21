@@ -39,7 +39,11 @@ def extractive_answer(query: str, retrieved: List[Tuple[Chunk, float]]) -> str:
 # Gemini Mode
 # -------------------------
 
-def llm_answer(query: str, retrieved: List[Tuple[Chunk, float]]) -> str:
+def llm_answer(
+    query: str,
+    retrieved: List[Tuple[Chunk, float]],
+    history: List[dict] = None,
+) -> str:
 
     api_key = os.getenv("GEMINI_API_KEY")
 
@@ -60,6 +64,15 @@ def llm_answer(query: str, retrieved: List[Tuple[Chunk, float]]) -> str:
         for chunk, _ in retrieved
     )
 
+    # Format conversation history if available
+    history_context = ""
+    if history:
+        history_context = "Conversation History:\n"
+        for msg in history:
+            role = "User" if msg["role"] == "user" else "Assistant"
+            history_context += f"- {role}: {msg['content']}\n"
+        history_context += "\n"
+
     prompt = f"""
 You are an anime recommendation assistant.
 
@@ -73,7 +86,7 @@ Rules:
 - When recommending anime, briefly explain why.
 - Mention the anime title(s).
 
-Context
+{history_context}Context
 ========
 {context}
 
@@ -82,7 +95,7 @@ Question:
 """
 
     response = client.models.generate_content(
-        model="gemini-3.1-flash-lite",
+        model="gemini-2.5-flash",
         contents=prompt,
     )
 
@@ -97,9 +110,10 @@ def generate_answer(
     query: str,
     retrieved: List[Tuple[Chunk, float]],
     mode: str = "extractive",
+    history: List[dict] = None,
 ) -> str:
 
     if mode == "llm":
-        return llm_answer(query, retrieved)
+        return llm_answer(query, retrieved, history)
 
     return extractive_answer(query, retrieved)
