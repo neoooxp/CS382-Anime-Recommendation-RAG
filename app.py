@@ -65,7 +65,7 @@ def highlight_terms(text: str, query: str) -> str:
     if not words:
         return text
         
-    pattern = r"\b(" + "|".join(re.escape(w) for w in words) + r")\b"
+    pattern = r"(" + "|".join(re.escape(w) for w in words) + r")"
     try:
         highlighted = re.sub(pattern, r"<mark style='background-color: #ffd700; color: black; padding: 2px 4px; border-radius: 3px;'>\1</mark>", text, flags=re.IGNORECASE)
         return highlighted
@@ -158,8 +158,26 @@ with st.sidebar:
 
 # --- MAIN CHAT INTERFACE ---
 
-# Display chat history
-for msg in st.session_state.messages:
+# Display chat history (older messages grouped in a collapsable expander)
+if len(st.session_state.messages) > 2:
+    with st.expander("📚 Show Past Conversation History", expanded=False):
+        for msg in st.session_state.messages[:-2]:
+            with st.chat_message(msg["role"]):
+                st.markdown(msg["content"])
+                if msg["role"] == "assistant" and msg.get("latency_retrieval") is not None:
+                    lat_r = msg["latency_retrieval"] * 1000
+                    lat_g = msg["latency_generation"]
+                    st.caption(f"⏱️ Retrieval: {lat_r:.1f}ms | Generation: {lat_g:.2f}s")
+                    if msg.get("retrieved_chunks"):
+                        with st.expander("Show Retrieved Sources & Match Highlights", expanded=False):
+                            for chunk, score in msg["retrieved_chunks"]:
+                                st.write(f"**{chunk.doc_title}**  ·  Similarity Score: `{score:.3f}`")
+                                highlighted = highlight_terms(chunk.text, msg.get("query", ""))
+                                st.markdown(f"<div style='border-left: 3px solid #6c757d; padding-left: 10px; margin-bottom: 10px; font-style: italic;'>{highlighted}</div>", unsafe_allow_html=True)
+
+# Display the latest messages (last user prompt and assistant response) normally
+latest_msgs = st.session_state.messages[-2:] if len(st.session_state.messages) >= 2 else st.session_state.messages
+for msg in latest_msgs:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
         
@@ -171,12 +189,13 @@ for msg in st.session_state.messages:
             
             # Display source chunks if present
             if msg.get("retrieved_chunks"):
-                with st.expander("Show Retrieved Sources & Match Highlights"):
+                with st.expander("Show Retrieved Sources & Match Highlights", expanded=True):
                     for chunk, score in msg["retrieved_chunks"]:
                         st.write(f"**{chunk.doc_title}**  ·  Similarity Score: `{score:.3f}`")
                         # Highlight words matching the query
                         highlighted = highlight_terms(chunk.text, msg.get("query", ""))
                         st.markdown(f"<div style='border-left: 3px solid #6c757d; padding-left: 10px; margin-bottom: 10px; font-style: italic;'>{highlighted}</div>", unsafe_allow_html=True)
+
 
 
 # Query input box

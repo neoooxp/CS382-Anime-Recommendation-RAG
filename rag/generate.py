@@ -47,6 +47,19 @@ def llm_answer(
 
     api_key = os.getenv("GEMINI_API_KEY")
 
+    if not api_key and os.path.exists(".env"):
+        try:
+            with open(".env", "r", encoding="utf-8") as f:
+                for line in f:
+                    if line.strip() and not line.startswith("#") and "=" in line:
+                        k, v = line.strip().split("=", 1)
+                        if k.strip() == "GEMINI_API_KEY":
+                            api_key = v.strip().strip('"').strip("'")
+                            os.environ["GEMINI_API_KEY"] = api_key
+                            break
+        except Exception:
+            pass
+
     if not api_key:
         return (
             "GEMINI_API_KEY was not found.\n\n"
