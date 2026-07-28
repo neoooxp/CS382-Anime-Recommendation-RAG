@@ -32,7 +32,7 @@ graph TD
 
 ### 3. Generation Layer ([generate.py](file:///d:/Downdloads%20D/CS382/final/final_project_starter_test/final_project_starter/rag/generate.py))
 - **Conversational Memory**: Accepts past conversation history, structuring it directly into the prompt context. This enables multi-turn references (e.g. *“Can you tell me more about that first one?”*).
-- **LLM Synthesis**: Queries Gemini API (`gemini-2.5-flash`) via the modern `google-genai` SDK.
+- **LLM Synthesis**: Queries Gemini API (`gemini-3.1-flash-lite`) via the modern `google-genai` SDK.
 - **Strict grounding**: Prompts are heavily sandboxed with instructions to answer *only* using retrieved database context, preventing hallucinations.
 - **Extractive mode**: Provides an offline, API-key-free fallback that returns the raw matching text chunks.
 
